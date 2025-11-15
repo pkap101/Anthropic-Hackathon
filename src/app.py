@@ -82,7 +82,7 @@ async def grade_question(
         f"Student answer: {student_answer}\n"
         f"Rubric: {rubric}"
     )
-    context_docs = retriever.get_relevant_documents(retrieval_query)
+    context_docs = retriever.invoke(retrieval_query)
     context = "\n\n".join(d.page_content for d in context_docs)
 
     formatted_data = (
