@@ -1,29 +1,54 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
+from typing import List
 
-from langchain_community.document_loaders import DirectoryLoader
-from langchain_community.document_loaders import PyPDFLoader
+from dotenv import load_dotenv
+from pypdf import PdfReader
+
+from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_voyageai import VoyageAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
+from langchain.embeddings.base import Embeddings
+
+from voyageai import Client
 
 load_dotenv()
 
-# Put your discrete math PDFs here: src/data/dmt_2/*.pdf
 DATA_DIR = Path(__file__).parent.parent / "data" / "dmt_2"
 CHROMA_DIR = Path(__file__).parent.parent / "data" / "chroma_dmt_2"
 
 
+class VoyageEmbeddings(Embeddings):
+    def __init__(self, model: str = "voyage-2", api_key: str | None = None):
+        self.client = Client(api_key=api_key or os.getenv("VOYAGE_API_KEY"))
+        self.model = model
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return self.client.embed(texts=texts, model=self.model).embeddings
+
+    def embed_query(self, text: str) -> List[float]:
+        return self.embed_documents([text])[0]
+
+
+def _load_pdf_docs() -> List[Document]:
+    docs: List[Document] = []
+    for pdf_path in DATA_DIR.glob("*.pdf"):
+        reader = PdfReader(str(pdf_path), strict=False)
+        for i, page in enumerate(reader.pages):
+            text = page.extract_text() or ""
+            if not text.strip():
+                continue
+            docs.append(
+                Document(
+                    page_content=text,
+                    metadata={"source": str(pdf_path), "page": i},
+                )
+            )
+    return docs
+
+
 def build_vectorstore() -> None:
-    """Run manually when PDFs change: python -m service.rag"""
-    loader = DirectoryLoader(
-        str(DATA_DIR),
-        glob="**/*.pdf",
-        loader_cls=PyPDFLoader,
-        show_progress=True,
-    )
-    docs = loader.load()
+    docs = _load_pdf_docs()
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
@@ -31,26 +56,17 @@ def build_vectorstore() -> None:
     )
     splits = splitter.split_documents(docs)
 
-    embeddings = VoyageAIEmbeddings(
-        model="voyage-3",
-        voyage_api_key=os.getenv("VOYAGE_API_KEY"),
-    )
+    embeddings = VoyageEmbeddings()
+    CHROMA_DIR.mkdir(parents=True, exist_ok=True)
 
-    vectordb = Chroma.from_documents(
+    Chroma.from_documents(
         documents=splits,
         embedding=embeddings,
         persist_directory=str(CHROMA_DIR),
     )
-    vectordb.persist()
 
 
-# --- Runtime: reuse persisted DB (no re-embedding of docs) ---
-
-_embeddings = VoyageAIEmbeddings(
-    model="voyage-3",
-    voyage_api_key=os.getenv("VOYAGE_API_KEY"),
-)
-
+_embeddings = VoyageEmbeddings()
 _vectordb = Chroma(
     persist_directory=str(CHROMA_DIR),
     embedding_function=_embeddings,
@@ -63,4 +79,4 @@ def get_retriever():
 
 if __name__ == "__main__":
     build_vectorstore()
-    print("Built vector store from PDFs in", DATA_DIR)
+    print(f"Built vector store from PDFs in {DATA_DIR}")

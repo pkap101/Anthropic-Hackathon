@@ -75,7 +75,7 @@ async def grade_question(request: GradeRequest):  # Use the Pydantic model
         f"Student answer: {request.student_answer}\n"
         f"Rubric: {request.rubric}"
     )
-    context_docs = retriever.get_relevant_documents(retrieval_query)
+    context_docs = retriever.invoke(retrieval_query)
     context = "\n\n".join(d.page_content for d in context_docs)
     
     formatted_data = (
