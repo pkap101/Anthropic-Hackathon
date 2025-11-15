@@ -62,52 +62,44 @@ async def health_check():
 
 
 @app.post("/api/grader", summary="auto grader", response_model=GradeResponse)
-#async def grade_question(request: GradeRequest):
-async def grade_question(
-    question: str = Form(...),
-    student_answer: str = Form(...),
-    rubric: str = Form(...),
-):
+async def grade_question(request: GradeRequest):  # Use the Pydantic model
     if not API_KEY:
         logger.error("API key not configured")
         raise HTTPException(status_code=500, detail="API key not configured")
     
-    logger.info(f"Processing chat request: {question[:50]}...")
-    
+    logger.info(f"Processing grade request: {request.question[:50]}...")
     llm_client = LLMClient()
-    #gradescope_client = GradescopeClient()
-
+    
     retrieval_query = (
-        f"Question: {question}\n"
-        f"Student answer: {student_answer}\n"
-        f"Rubric: {rubric}"
+        f"Question: {request.question}\n"
+        f"Student answer: {request.student_answer}\n"
+        f"Rubric: {request.rubric}"
     )
     context_docs = retriever.invoke(retrieval_query)
     context = "\n\n".join(d.page_content for d in context_docs)
-
+    
     formatted_data = (
         f"Course Context:\n{context}\n\n"
-        f"Rubric:\n{rubric}\n\n"
-        f"Question:\n{question}\n\n"
-        f"Student Answer:\n{student_answer}"
+        f"Rubric:\n{request.rubric}\n\n"
+        f"Question:\n{request.question}\n\n"
+        f"Student Answer:\n{request.student_answer}"
     )
-
     
     try:        
         result = await llm_client.analyze_question(
             question_data=formatted_data,
         )
-        response = PlainTextResponse(content=result.response, media_type="text/plain")
-        return response
-    
+        # Return the GradeResponse object directly
+        return GradeResponse(
+            response=result.response,
+            tokens_used=result.tokens_used,
+            model=result.model
+        )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error during chat analysis: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
-    #finally:
-     #   await gradescope_client.close()
-
 
 if __name__ == "__main__":
     import uvicorn
