@@ -14,8 +14,11 @@ from voyageai import Client
 
 load_dotenv()
 
-DATA_DIR = Path(__file__).parent.parent / "data" / "dmt_2"
-CHROMA_DIR = Path(__file__).parent.parent / "data" / "chroma_dmt_2"
+#DATA_DIR = Path(__file__).parent.parent / "data" / "dmt_2"
+#CHROMA_DIR = Path(__file__).parent.parent / "data" / "chroma_dmt_2"
+
+DATA_DIR = Path(__file__).parent.parent / "data" / "qa"
+CHROMA_DIR = Path(__file__).parent.parent / "data" / "chroma_qa"
 
 
 class VoyageEmbeddings(Embeddings):
