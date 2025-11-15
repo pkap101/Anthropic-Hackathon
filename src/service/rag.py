@@ -32,7 +32,7 @@ def build_vectorstore() -> None:
     splits = splitter.split_documents(docs)
 
     embeddings = VoyageAIEmbeddings(
-        model="voyage-multimodal-3",
+        model="voyage-3",
         voyage_api_key=os.getenv("VOYAGE_API_KEY"),
     )
 
@@ -47,7 +47,7 @@ def build_vectorstore() -> None:
 # --- Runtime: reuse persisted DB (no re-embedding of docs) ---
 
 _embeddings = VoyageAIEmbeddings(
-    model="voyage-multimodal-3",
+    model="voyage-3",
     voyage_api_key=os.getenv("VOYAGE_API_KEY"),
 )
 
