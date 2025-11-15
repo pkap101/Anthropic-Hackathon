@@ -13,7 +13,6 @@ from pydantic import BaseModel, Field
 
 from service.llm_client import LLMClient
 from service.rag import get_retriever
-#from service.gradescope import GradescopeService
 
 # Load environment variables
 load_dotenv()
@@ -32,6 +31,7 @@ class GradeRequest(BaseModel):
     question: str
     student_answer: str
     rubric: str
+    course: str
 
 class GradeResponse(BaseModel):
     response: str
@@ -62,14 +62,25 @@ async def health_check():
 
 
 @app.post("/api/grader", summary="auto grader", response_model=GradeResponse)
-async def grade_question(request: GradeRequest):  # Use the Pydantic model
+async def grade_question(request: GradeRequest):
+# async def grade_question(
+#     question: str = Form(...),
+#     student_answer: str = Form(...),
+#     rubric: str = Form(...),
+#     course: str = Form(..., description="Course identifier: 'dmt_2' or 'qa'"),
+# ):
     if not API_KEY:
         logger.error("API key not configured")
         raise HTTPException(status_code=500, detail="API key not configured")
     
-    logger.info(f"Processing grade request: {request.question[:50]}...")
-    llm_client = LLMClient()
+    logger.info(f"Processing chat request for course={request.course}: {request.question[:50]}...")
     
+    llm_client = LLMClient()
+
+    try:
+        retriever = get_retriever(request.course)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     retrieval_query = (
         f"Question: {request.question}\n"
         f"Student answer: {request.student_answer}\n"
@@ -77,29 +88,34 @@ async def grade_question(request: GradeRequest):  # Use the Pydantic model
     )
     context_docs = retriever.invoke(retrieval_query)
     context = "\n\n".join(d.page_content for d in context_docs)
-    
+
     formatted_data = (
+        f"Course: {request.course}\n\n"
         f"Course Context:\n{context}\n\n"
         f"Rubric:\n{request.rubric}\n\n"
         f"Question:\n{request.question}\n\n"
         f"Student Answer:\n{request.student_answer}"
     )
+
     
     try:        
         result = await llm_client.analyze_question(
             question_data=formatted_data,
         )
-        # Return the GradeResponse object directly
         return GradeResponse(
             response=result.response,
             tokens_used=result.tokens_used,
-            model=result.model
+            model=result.model,
         )
+        #response = PlainTextResponse(content=result.response, media_type="text/plain")
+        #return response
+    
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error during chat analysis: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -14,7 +14,7 @@ RESET = "\033[0m"
 BLUE = "\033[94m"
 CYAN = "\033[96m"
 
-def get_api_response(question, student_answer, rubric):
+def get_api_response(question, student_answer, rubric, course):
     """
     Call the grader API with question, student answer, and rubric.
     Returns the grading response.
@@ -29,6 +29,7 @@ def get_api_response(question, student_answer, rubric):
         "question": question,
         "student_answer": student_answer,
         "rubric": rubric,
+        "course": course,
     }
     
     url = f"{CONFIG.API_PROTOCOL}://{CONFIG.API_HOST}:{CONFIG.API_PORT}/api/grader"
@@ -124,6 +125,10 @@ with app:
     
     with gr.Row():
         with gr.Column(scale=1):
+            course_input = gr.Dropdown(
+                label="Course",
+                choices=["dmt_2", "qa"],
+            )
             question_input = gr.Textbox(
                 label="Question",
                 placeholder="Enter the question here...",
@@ -189,7 +194,7 @@ with app:
     
     submit_btn.click(
         fn=get_api_response,
-        inputs=[question_input, student_answer_input, rubric_input],
+        inputs=[question_input, student_answer_input, rubric_input, course_input],
         outputs=output,
     )
 
