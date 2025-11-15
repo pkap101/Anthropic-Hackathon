@@ -24,7 +24,6 @@ API_KEY = os.getenv("API_KEY")
 
 # FastAPI app initialization
 app = FastAPI()
-retriever = get_retriever()
 
 # Class Definitions
 class GradeRequest(BaseModel):

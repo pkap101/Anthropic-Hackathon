@@ -2,7 +2,7 @@
 
 Part C: Critical Analysis 
 
-Component 2: Original Variable Design (5 points, ~150-200 words)
+Component 2: Original Variable Design (Scored out of 5 points, ~150-200 words)
 
 Propose a NEW binary variable (one not in the dataset) to test against Meridian's equity returns:
 What is your proposed binary variable and why would it provide meaningful strategic insights?

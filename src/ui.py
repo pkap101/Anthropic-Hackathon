@@ -89,6 +89,7 @@ class GraderTheme(Base):
             button_primary_background_fill="#4f46e5",
             button_primary_background_fill_dark="#4f46e5",
         )
+        
 
 app = gr.Blocks(theme=GraderTheme())
 
@@ -117,6 +118,12 @@ with app:
         margin-right: 10px !important;
         border-radius: var(--block-radius) !important;
     }
+    #result-box {
+        border: 1px solid rgba(148, 163, 184, 0.5);
+        padding: 0.75rem;
+        border-radius: var(--block-radius);
+        min-height: 200px; /* so the box is visible while waiting */
+    }                      
     </style>
     """)
     
@@ -149,12 +156,12 @@ with app:
             clear_btn = gr.ClearButton([question_input, student_answer_input, rubric_input])
         
         with gr.Column(scale=1):
-            output = gr.Textbox(
-                label="Grading Result",
-                lines=15,
-                interactive=False,
+            gr.Markdown("### Grading Result")
+            output = gr.Markdown(
+                value="⬇️ Grading result will appear here...",
+                elem_id="result-box",
             )
-    
+            
     # Example inputs - Using Accordion instead of Examples table
     with gr.Accordion("💡 Example Questions (Click to expand)", open=False):
         gr.Markdown("""
