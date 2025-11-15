@@ -31,7 +31,7 @@ class LLMClient:
         self.API_KEY = os.environ.get("API_KEY")
 
         if not self.API_KEY:
-            raise ValueError("Missing OpenAI API key")
+            raise ValueError("Missing API key")
 
         self.client = AsyncAnthropic(api_key=self.API_KEY)
 
