@@ -62,12 +62,6 @@ async def health_check():
 
 @app.post("/api/grader", summary="auto grader", response_model=GradeResponse)
 async def grade_question(request: GradeRequest):
-# async def grade_question(
-#     question: str = Form(...),
-#     student_answer: str = Form(...),
-#     rubric: str = Form(...),
-#     course: str = Form(..., description="Course identifier: 'dmt_2' or 'qa'"),
-# ):
     if not API_KEY:
         logger.error("API key not configured")
         raise HTTPException(status_code=500, detail="API key not configured")
@@ -106,8 +100,6 @@ async def grade_question(request: GradeRequest):
             tokens_used=result.tokens_used,
             model=result.model,
         )
-        #response = PlainTextResponse(content=result.response, media_type="text/plain")
-        #return response
     
     except HTTPException:
         raise

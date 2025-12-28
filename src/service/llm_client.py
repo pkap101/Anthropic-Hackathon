@@ -51,7 +51,7 @@ class LLMClient:
         self,
         question_data: str,
         model: str = "claude-haiku-4-5-20251001",
-        temperature: float = 0.3,
+        temperature: float = 0.0,
         max_tokens: int = 5000,
         timeout: float = 120.0,
         prompt_name: str = "prompt",
